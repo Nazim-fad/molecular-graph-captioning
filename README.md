@@ -44,7 +44,7 @@ This generates:
 Train the graph neural network:
 
 ```bash
-python train_gcn.py
+python scripts/train_gcn.py
 ```
 
 This creates `model_checkpoint.pt`.
@@ -54,7 +54,7 @@ This creates `model_checkpoint.pt`.
 Retrieve descriptions for test molecules:
 
 ```bash
-python retrieval_answer.py
+python scripts/retrieval_answer.py
 ```
 
 This generates `test_retrieved_descriptions.csv` with retrieved descriptions for each test molecule.
