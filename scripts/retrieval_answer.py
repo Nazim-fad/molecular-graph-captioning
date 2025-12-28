@@ -115,6 +115,7 @@ def main():
 
     # Define Output path
     output_dir = "outputs/inference"
+    os.makedirs(output_dir, exist_ok=True)
     output_csv = os.path.join(output_dir, "test_retrieved_descriptions.csv")
     
     # Checkpoint path
