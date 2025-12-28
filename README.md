@@ -24,7 +24,7 @@ Run the following scripts in order:
 Check the structure and contents of your graph files:
 
 ```bash
-python inspect_graph_data.py
+python scripts/inspect_graph_data.py
 ```
 
 ### 2. Generate Description Embeddings
@@ -32,7 +32,7 @@ python inspect_graph_data.py
 Create BERT embeddings for molecular descriptions:
 
 ```bash
-python generate_description_embeddings.py
+python scripts/generate_description_embeddings.py
 ```
 
 This generates:
