@@ -1,0 +1,9 @@
+text_encoder: "bert-base-uncased"
+max_token_length: 256
+
+paths:
+  # Inputs
+  graphs: "data/raw"
+  
+  # Outputs
+  embeddings: "data/processed"

@@ -1,0 +1,21 @@
+experiment_name: "rag_dataset_v1"
+
+paths:
+  # Input Data
+  train_graphs: "data/processed/train_graphs.pkl"
+  val_graphs: "data/processed/validation_graphs.pkl"
+  
+  # The embeddings CSV and graphs for retrieval
+  retrieval_emb_csv: "data/processed/train_embeddings.csv"
+  retrieval_graphs: "data/processed/train_graphs.pkl"
+
+  # Checkpoint (GCN Encoder)
+  model_checkpoint: "outputs/checkpoints/gcn_checkpoint.pt"
+  
+  # Output Dataset Files (JSONL)
+  train_output: "data/processed/rag_dataset_train.jsonl"
+  val_output: "data/processed/rag_dataset_val.jsonl"
+
+params:
+  top_k: 3
+  batch_size: 32

@@ -1,6 +1,8 @@
 import os
 import pickle
+import sys
 
+sys.path.append(".")
 
 def inspect_graph_file(pkl_path, num_samples=3):
     if not os.path.exists(pkl_path):
@@ -84,7 +86,7 @@ def main():
     for i, split in enumerate(splits):
         if i > 0:
             print("\n" + "=" * 100)
-        pkl_path = f"{base_path}/{split}_graphs.pkl"
+        pkl_path = os.path.join(base_path, f"{split}_graphs.pkl")
         inspect_graph_file(pkl_path, num_samples=1)
     
     print("\n" + "=" * 100)

@@ -1,18 +1,30 @@
+import sys
 import os
-
+import yaml
 import pandas as pd
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from data_utils import (
-    load_id2emb, load_descriptions_from_graphs, PreprocessedGraphDataset, collate_fn
-)
+# Add root to path
+sys.path.append(".")
 
-from train_gcn import (
-    MolGNN, MatchingHead, DEVICE, TRAIN_GRAPHS, TEST_GRAPHS, TRAIN_EMB_CSV
+from src.data_utils import (
+    load_id2emb, 
+    load_descriptions_from_graphs, 
+    PreprocessedGraphDataset, 
+    collate_fn
 )
+from src.model_gcn import MolGNN, MatchingHead
 
+# =========================================================
+# CONFIG
+# =========================================================
+config_path = "configs/gcn_train.yaml"
+with open(config_path, "r") as f:
+    config = yaml.safe_load(f)
+
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 @torch.no_grad()
 def retrieve_descriptions(model, match_head, train_data, test_data, train_emb_dict, device, output_csv, top_k=10):
@@ -92,26 +104,42 @@ def retrieve_descriptions(model, match_head, train_data, test_data, train_emb_di
 
 def main():
     print(f"Device: {DEVICE}")
+    print(f"Config: {config['experiment_name']}")
     
-    output_csv = "test_retrieved_descriptions.csv"
+    #  paths
+    paths = config['paths']
+    train_graphs = paths['train_graphs']
+    test_graphs = paths['test_graphs']
+    train_emb_csv = paths['train_emb_csv']
+    checkpoint_dir = paths['checkpoint_dir']
+
+    # Define Output path
+    output_dir = "outputs/inference"
+    output_csv = os.path.join(output_dir, "test_retrieved_descriptions.csv")
     
-    model_path = "model_checkpoint.pt"
+    # Checkpoint path
+    model_path = os.path.join(checkpoint_dir, "gcn_checkpoint.pt")
     if not os.path.exists(model_path):
         print(f"Error: Model checkpoint '{model_path}' not found.")
         print("Please train a model first using train_gcn.py")
         return
     
-    if not os.path.exists(TEST_GRAPHS):
-        print(f"Error: Preprocessed graphs not found at {TEST_GRAPHS}")
+    if not os.path.exists(test_graphs):
+        print(f"Error: Preprocessed graphs not found at {test_graphs}")
         return
     
-    train_emb = load_id2emb(TRAIN_EMB_CSV)
+    train_emb = load_id2emb(train_emb_csv)
     
     emb_dim = len(next(iter(train_emb.values())))
 
     checkpoint = torch.load(model_path, map_location=DEVICE)
     
-    model = MolGNN(out_dim=emb_dim).to(DEVICE)
+    model = MolGNN(
+        hidden=config['model']['hidden_dim'],
+        out_dim=emb_dim,
+        layers=config['model']['layers'],
+        dropout=config['model']['dropout']
+    ).to(DEVICE)
     print(f"Loading model from {model_path}")
     model.load_state_dict(checkpoint["mol_enc"])
     model.eval()
@@ -123,16 +151,15 @@ def main():
     retrieve_descriptions(
         model=model,
         match_head=match_head,
-        train_data=TRAIN_GRAPHS,
-        test_data=TEST_GRAPHS,
+        train_data=train_graphs,
+        test_data=test_graphs,
         train_emb_dict=train_emb,
         device=DEVICE,
         output_csv=output_csv,
         top_k=10
     )
-    
-
 
 if __name__ == "__main__":
     main()
 
+    

@@ -16,6 +16,7 @@ def contrastive_loss(graph_emb, text_emb, temperature=0.07):
     """
     # Normalize embeddings
     graph_emb = F.normalize(graph_emb, dim=-1)
+    text_emb = F.normalize(text_emb, dim=-1)
 
     # Similarity matrix
     logits = graph_emb @ text_emb.T
@@ -68,6 +69,7 @@ def matching_loss(graph_emb, text_emb, matching_head):
     """
     # Normalize for similarity computation
     graph_emb = F.normalize(graph_emb, dim=-1)
+    text_emb = F.normalize(text_emb, dim=-1)
 
     # Similarity matrix
     sim_matrix = graph_emb @ text_emb.T
