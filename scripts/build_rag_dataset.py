@@ -25,6 +25,11 @@ config_path = "configs/rag_dataset.yaml"
 with open(config_path, "r") as f:
     config = yaml.safe_load(f)
 
+# GCN Config
+gcn_config_path = "configs/gcn_train.yaml"
+with open(gcn_config_path, "r") as f:
+    gcn_config = yaml.safe_load(f)
+
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
@@ -103,7 +108,12 @@ def main():
     print(f"Loading GCN Encoder from {ckpt_path}...")
     checkpoint = torch.load(ckpt_path, map_location=DEVICE)
     
-    mol_encoder = MolGNN(out_dim=emb_dim).to(DEVICE)
+    mol_encoder = MolGNN(
+            out_dim=emb_dim,
+            hidden=gcn_config['model']['hidden_dim'],
+            layers=gcn_config['model']['layers'],
+            dropout=gcn_config['model']['dropout']
+        ).to(DEVICE)
     mol_encoder.load_state_dict(checkpoint["mol_enc"])
     mol_encoder.eval()
 

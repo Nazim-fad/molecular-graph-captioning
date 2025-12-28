@@ -23,6 +23,9 @@ def test_rag_pipeline_subset():
     config_path = "configs/rag_dataset.yaml"
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
+    gcn_config_path = "configs/gcn_train.yaml"
+    with open(gcn_config_path, "r") as f:
+        gcn_config = yaml.safe_load(f)
 
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Running test on: {DEVICE}")
@@ -36,7 +39,12 @@ def test_rag_pipeline_subset():
     train_emb_dict = load_id2emb(config['paths']['retrieval_emb_csv'])
     emb_dim = len(next(iter(train_emb_dict.values())))
     
-    model = MolGNN(out_dim=emb_dim).to(DEVICE)
+    model = MolGNN(
+            out_dim=emb_dim,
+            hidden=gcn_config['model']['hidden_dim'], 
+            layers=gcn_config['model']['layers'],
+            dropout=gcn_config['model']['dropout']
+        ).to(DEVICE)
     ckpt = torch.load(config['paths']['model_checkpoint'], map_location=DEVICE)
     model.load_state_dict(ckpt["mol_enc"])
     model.eval()

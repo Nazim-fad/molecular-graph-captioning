@@ -39,6 +39,7 @@ def train_epoch(mol_enc, match_head, loader, optimizer, device):
         text_emb = text_emb.to(device)
 
         mol_vec = mol_enc(graphs)
+        mol_vec = F.normalize(mol_vec, dim=-1)
         txt_vec = F.normalize(text_emb, dim=-1)
 
         # Contrastive loss (ITC)
@@ -70,7 +71,8 @@ def eval_retrieval(data_path, emb_dict, mol_enc, device):
     for graphs, text_emb in dl:
         graphs = graphs.to(device)
         text_emb = text_emb.to(device)
-        all_mol.append(mol_enc(graphs))
+        mol_out = mol_enc(graphs)
+        all_mol.append(F.normalize(mol_out, dim=-1))
         all_txt.append(F.normalize(text_emb, dim=-1))
     all_mol = torch.cat(all_mol, dim=0)
     all_txt = torch.cat(all_txt, dim=0)
