@@ -10,14 +10,14 @@ paths:
   output_dir: "outputs/rag_checkpoints"
 
 training:
-  batch_size: 8
-  epochs: 10
-  lr: 5.0e-5
+  batch_size: 12
+  epochs: 2
+  lr: 0.0002
   warmup_steps: 100
   device: "cuda"
 
 generation:
-  max_new_tokens: 200
+  max_new_tokens: 220
 
 lora:
   r: 8

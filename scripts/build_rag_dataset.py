@@ -72,13 +72,13 @@ def build_dataset_for_split(split_name, graph_ds, mol_encoder, train_embs, train
                 # retrieved text descriptions
                 current_indices = topk_indices[i].tolist()
                 retrieved_texts = [
-                    train_id2desc[train_ids[idx]] 
+                    train_id2desc[train_ids[idx]]
                     for idx in current_indices
                 ]
                 
                 # Build Prompt
                 prompt = build_prompt(graph, retrieved_texts)
-                target_text = graph.description
+                target_text = graph.description if split_name != "Test" else ""
                 
                 record = {
                     "id": graph_id,
@@ -150,6 +150,19 @@ def main():
             train_ids,
             train_id2desc,
             config['paths']['train_output'],
+            config['params']['top_k']
+        )
+    # Generate Test Dataset
+    if os.path.exists(config['paths']['test_graphs']):
+        test_ds = PreprocessedGraphDataset(config['paths']['test_graphs'])
+        build_dataset_for_split(
+            "Test",
+            test_ds,
+            mol_encoder,
+            train_embs,
+            train_ids,
+            train_id2desc,
+            config['paths']['test_output'],
             config['params']['top_k']
         )
 

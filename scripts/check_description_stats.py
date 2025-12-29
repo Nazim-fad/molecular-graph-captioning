@@ -56,6 +56,7 @@ def compute_percentiles(lengths):
         "median": np.median(lengths),
         "p90": np.percentile(lengths, 90),
         "p95": np.percentile(lengths, 95),
+        "p99": np.percentile(lengths, 99),
         "max": np.max(lengths)
     }
 
@@ -66,6 +67,7 @@ def print_stats(name, stats):
     print(f"  Median: {int(stats['median'])}")
     print(f"  90%:    {int(stats['p90'])}")
     print(f"  95%:    {int(stats['p95'])}")
+    print(f"  99%:    {int(stats['p99'])}")
     print(f"  Max:    {int(stats['max'])}")
 
 def main():
@@ -117,9 +119,11 @@ def main():
     # ==========================================
     # RAG Prompt Estimation
     # ==========================================
-    K = 2
+    K = 1
     avg_desc = gpt2_stats['avg']
     p95_desc = gpt2_stats['p95']
+    p99_desc = gpt2_stats['p99']
+    max_desc = gpt2_stats['max']
     
     # Measure Prompt Fixed Costs
     base_tokens, per_neighbor_cost = measure_prompt_intro_outro(gpt2_tokenizer)
@@ -131,10 +135,14 @@ def main():
     # Estimate Total Input Length (Prompt + K*Neighbors + Target)
     est_len_avg = base_tokens + (K * (avg_desc + per_neighbor_cost)) + avg_desc
     est_len_95 = base_tokens + (K * (p95_desc + per_neighbor_cost)) + p95_desc
+    est_len_99 = base_tokens + (K * (p99_desc + per_neighbor_cost)) + p99_desc
+    max_len = base_tokens + (K * (max_desc + per_neighbor_cost)) + max_desc
     
     print(f"\n--- RAG Context Window Estimation (K={K}) ---")
     print(f"  Avg Case: ~{int(est_len_avg)} tokens")
     print(f"  95% Case: ~{int(est_len_95)} tokens")
+    print(f"  99% Case: ~{int(est_len_99)} tokens")
+    print(f"  Max Case: ~{int(max_len)} tokens")
 
 if __name__ == "__main__":
     main()

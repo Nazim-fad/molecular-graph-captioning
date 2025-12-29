@@ -45,6 +45,8 @@ def main():
     model.resize_token_embeddings(len(tokenizer))
     model.to(DEVICE)
 
+    model.gradient_checkpointing_enable()
+
     # LoRA setup
     print("Applying LoRA...")
     peft_config = LoraConfig(
@@ -74,7 +76,7 @@ def main():
             tokenizer_name=model_name,
             max_length=config['model']['max_length']
         )
-        val_loader = DataLoader(val_ds, batch_size=1, shuffle=False)
+        val_loader = DataLoader(val_ds, batch_size=config['training']['batch_size'], shuffle=False)
     else:
         print("Warning: No validation data found.")
 
@@ -127,6 +129,11 @@ def main():
 
         avg_loss = total_loss / len(train_loader)
         print(f"\nEpoch {epoch+1} finished. Avg Loss: {avg_loss:.4f}")
+
+        # Safety save
+        checkpoint_path = os.path.join(output_dir, f"checkpoint_epoch_{epoch+1}")
+        model.save_pretrained(checkpoint_path)
+        print(f"Checkpoint model saved after training epoch {epoch+1} to {checkpoint_path}")
 
         # Validation
         if val_loader:
