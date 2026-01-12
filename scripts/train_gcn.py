@@ -5,9 +5,13 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
+import math
+import torch.nn as nn
+
 sys.path.append(".")
 
-from src.losses import contrastive_loss, matching_loss
+#from src.losses import contrastive_loss, matching_loss
+from src.losses import clip_contrastive_loss, matching_loss
 from src.data_utils import load_id2emb, PreprocessedGraphDataset, collate_fn
 from src.model_gcn import MolGNN, MatchingHead
 
@@ -23,27 +27,33 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # =========================================================
 # Training and Evaluation
 # =========================================================
-
-def train_epoch(mol_enc, match_head, loader, optimizer, device):
+def train_epoch(mol_enc, match_head, loader, optimizer, device, logit_scale):
     mol_enc.train()
     match_head.train()
 
     total_loss, total = 0.0, 0
-    
-    # params
-    temp = config['training']['temperature']
+
     lambda_itm = config['training']['lambda_itm']
+    label_smoothing = config['training'].get('label_smoothing', 0.0)
 
     for graphs, text_emb in loader:
         graphs = graphs.to(device)
         text_emb = text_emb.to(device)
 
-        mol_vec = mol_enc(graphs)
+        mol_vec = mol_enc(graphs)                 # [B,D]
         mol_vec = F.normalize(mol_vec, dim=-1)
-        txt_vec = F.normalize(text_emb, dim=-1)
+        txt_vec = F.normalize(text_emb, dim=-1)   # [B,D]
 
-        # Contrastive loss (ITC)
-        loss_itc = contrastive_loss(mol_vec, txt_vec, temperature=temp)
+        # Clamp logit_scale for stability (temperature in [0.01, 0.5])
+        logit_scale.data.clamp_(math.log(1/0.5), math.log(1/0.01))
+
+        # Contrastive loss (ITC) - CLIP style
+        loss_itc = clip_contrastive_loss(
+            mol_vec,
+            txt_vec,
+            logit_scale=logit_scale.exp(),
+            label_smoothing=label_smoothing
+        )
 
         # Matching loss (ITM)
         loss_itm = matching_loss(mol_vec, txt_vec, match_head)
@@ -59,6 +69,7 @@ def train_epoch(mol_enc, match_head, loader, optimizer, device):
         total += bs
 
     return total_loss / total
+
 
 
 @torch.no_grad()
@@ -137,29 +148,44 @@ def main():
     ).to(DEVICE)
     match_head = MatchingHead(emb_dim).to(DEVICE)
 
+    init_temp = config['training'].get('temperature', 0.07)
+    logit_scale = nn.Parameter(torch.tensor(math.log(1.0 / init_temp), device=DEVICE))
+
     optimizer = torch.optim.Adam(
-        list(mol_enc.parameters()) + list(match_head.parameters()),
-        lr=learning_rate
+    list(mol_enc.parameters()) + list(match_head.parameters()) + [logit_scale],
+    lr=learning_rate
     )
+    os.makedirs(checkpoint_dir, exist_ok=True)
+
+    monitor = config["training"].get("monitor", "R@1")  # "MRR" ou "R@1"
+    best_score = -1.0
+    best_epoch = -1
+    save_path = os.path.join(checkpoint_dir, "gcn_checkpoint.pt")
 
     for ep in range(epochs):
-        train_loss = train_epoch(mol_enc, match_head, train_dl, optimizer, DEVICE)
+        train_loss = train_epoch(mol_enc, match_head, train_dl, optimizer, DEVICE, logit_scale)
+
         if val_emb is not None and os.path.exists(val_graphs_path):
             val_scores = eval_retrieval(val_graphs_path, val_emb, mol_enc, DEVICE)
         else:
             val_scores = {}
+
         print(f"Epoch {ep+1}/{epochs} - loss={train_loss:.4f} - val={val_scores}")
-    
-    # Save Model
-    os.makedirs(checkpoint_dir, exist_ok=True)
-    save_path = os.path.join(checkpoint_dir, "gcn_checkpoint.pt")
-    torch.save({
-            "mol_enc": mol_enc.state_dict(),
-            "match_head": match_head.state_dict(),
-            "config": config
-        }, save_path)
-    
-    print(f"\nModel saved to {save_path}")
+
+        # Save best
+        if val_scores and monitor in val_scores:
+            score = float(val_scores[monitor])
+            if score > best_score and ep > epochs / 2:
+                best_score = score
+                best_epoch = ep + 1
+
+                torch.save({
+                    "mol_enc": mol_enc.state_dict(),
+                    "match_head": match_head.state_dict(),
+                    "epoch": best_epoch,
+                }, save_path)
+
+                print(f"Saved new best to {save_path} ({monitor}={best_score:.4f} @ epoch {best_epoch})")
 
 
 if __name__ == "__main__":

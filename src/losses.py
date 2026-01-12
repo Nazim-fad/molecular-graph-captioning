@@ -1,5 +1,31 @@
+import math
 import torch
 import torch.nn.functional as F
+
+
+def clip_contrastive_loss(graph_emb, text_emb, logit_scale, label_smoothing: float = 0.0):
+    """
+    MolCA-style bidirectional contrastive loss : learn to align graph and text embeddings. Add learnable temperature.
+
+    Args:
+        graph_emb: Tensor [Batch, Dim] - graph embeddings
+        text_emb:  Tensor [Batch, Dim] - text embeddings
+        logit_scale: float, typically exp(logit_scale) ~ 1/temperature
+    
+    Returns:
+        Scalar loss
+    """
+    graph_emb = F.normalize(graph_emb, dim=-1)
+    text_emb = F.normalize(text_emb, dim=-1)
+
+    logits = logit_scale * (graph_emb @ text_emb.T) # logit scale replace temperature, and will be able to change during the training
+
+    targets = torch.arange(logits.size(0), device=logits.device)
+
+    loss_g2t = F.cross_entropy(logits, targets, label_smoothing=label_smoothing)
+    loss_t2g = F.cross_entropy(logits.T, targets, label_smoothing=label_smoothing)
+
+    return (loss_g2t + loss_t2g) / 2
 
 
 def contrastive_loss(graph_emb, text_emb, temperature=0.07):
