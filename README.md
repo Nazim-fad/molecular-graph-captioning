@@ -11,7 +11,7 @@ Each molecule is represented as a graph structure:
 The objective is to learn a model $f: G \rightarrow S$ that generates a caption describing the molecule's structural and functional characteristics. Evaluation is performed on a hidden test set using text-generation metrics: **BLEU-4** and **BERTScore** (using RoBERTa-base).
 
 ### Data Splits
-* **Train:** ~31k graphs (with descriptions)
+* **Train:** 31k graphs (with descriptions)
 * **Validation:** 1k graphs (with descriptions)
 * **Test:** 1k graphs (without descriptions)
 
