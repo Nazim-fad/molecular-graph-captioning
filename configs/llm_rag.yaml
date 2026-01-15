@@ -1,0 +1,14 @@
+experiment_name: "Llama3_8B_ZeroShot_Baseline"
+
+paths:
+  test_dataset: "data/processed/rag_dataset_test.jsonl"
+  output_csv: "outputs/inference/submission_llm_rag.csv"
+
+model:
+  name: "mistralai/Mistral-7B-Instruct-v0.2" 
+  
+generation:
+  max_new_tokens: 512
+  temperature: 0.1      
+  top_p: 0.9
+  batch_size: 8

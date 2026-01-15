@@ -11,7 +11,7 @@ paths:
   retrieval_graphs: "data/raw/train_graphs.pkl"
 
   # Checkpoint (GCN Encoder)
-  model_checkpoint: "outputs/checkpoints/gcn_checkpoint.pt"
+  model_checkpoint: "outputs/checkpoints/gnn_checkpoint.pt"
   
   # Output Dataset Files (JSONL)
   train_output: "data/processed/rag_dataset_train.jsonl"

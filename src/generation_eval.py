@@ -23,12 +23,11 @@ def validate_generation(model, tokenizer, val_loader, device, max_new_tokens=220
 
         batch_size = input_ids_batch.shape[0]
 
-        # Process each sample in the batch individually
         for i in range(batch_size):
             labels = labels_batch[i]
             input_ids = input_ids_batch[i]
 
-            # Identify prompt tokens (where labels are -100)
+            # Identify prompt tokens
             prompt_mask = (labels == -100)
 
             if not torch.any(prompt_mask):
@@ -76,7 +75,6 @@ def validate_generation(model, tokenizer, val_loader, device, max_new_tokens=220
             generated_texts.append(gen_text)
             reference_texts.append(ref_text)
 
-    # METRICS
     try:
         bleu = corpus_bleu(generated_texts, [reference_texts]).score
     except:
@@ -98,4 +96,35 @@ def validate_generation(model, tokenizer, val_loader, device, max_new_tokens=220
     return {
         "BLEU-4": bleu,
         "BERTScore-F1": bert_f1
+    }
+
+
+@torch.no_grad()
+def validate_generation_molt5(model, val_loader, device):
+    model.eval()
+
+    generated_texts = []
+    reference_texts = []
+
+    for batch in tqdm(val_loader, desc="Validating MolT5"):
+        batch_graph = batch["batch_graph"].to(device)
+        labels = batch["labels"]
+
+        gens = model.generate(batch_graph)
+
+        for gen_text, label_ids in zip(gens, labels):
+            valid_ids = label_ids[label_ids != -100]
+            ref_text = model.tokenizer.decode(
+                valid_ids, skip_special_tokens=True
+            )
+
+            generated_texts.append(gen_text.strip())
+            reference_texts.append(ref_text.strip())
+
+    bleu = corpus_bleu(generated_texts, [reference_texts]).score
+    _, _, F1 = bertscore(generated_texts, reference_texts, lang="en")
+
+    return {
+        "BLEU-4": bleu,
+        "BERTScore-F1": F1.mean().item()
     }

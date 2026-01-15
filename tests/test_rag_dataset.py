@@ -11,7 +11,7 @@ from transformers import AutoTokenizer
 # Add root to path
 sys.path.append(".")
 
-from src.model_gcn import MolGNN
+from src.model_gine import MolGNN
 from src.data_utils import load_id2emb, load_descriptions_from_graphs, PreprocessedGraphDataset
 from src.prompts import build_prompt
 from src.rag_dataset import RAGGenerationDataset

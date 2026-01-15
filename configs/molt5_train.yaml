@@ -1,0 +1,32 @@
+experiment_name: "MolT5_Base_Baseline"
+
+paths:
+  train_graphs: "data/raw/train_graphs.pkl"
+  val_graphs: "data/raw/validation_graphs.pkl"
+  test_graphs: "data/raw/test_graphs.pkl"
+  
+  # Output Folders
+  checkpoint_dir: "outputs/checkpoints/molt5_base"
+  test_output: "outputs/inference/submission_molt5.csv"
+
+model:
+  name: "laituan245/molt5-base"
+
+  gnn_hidden: 128
+  
+  max_length: 512
+  num_beams: 5
+
+training:
+  # Set to null or "" to train from scratch. "outputs/checkpoints/molt5_base/best_model.pt"
+  resume_checkpoint: ""
+  device: "cuda"
+  batch_size: 8
+  
+  epochs: 15
+  lr: 0.0001        
+  weight_decay: 0.01
+  warmup_steps: 500 
+  contrastive_weight: 0.2
+  
+  save_every_epoch: true

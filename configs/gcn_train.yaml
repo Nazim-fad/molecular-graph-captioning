@@ -1,4 +1,4 @@
-experiment_name: "gcn_baseline"
+experiment_name: "gcn"
 
 paths:
   train_graphs: "data/raw/train_graphs.pkl"
